@@ -1,0 +1,33 @@
+env:
+  CIRRUS_CLONE_DEPTH: 1
+
+task:
+  freebsd_instance:
+    matrix:
+      image: freebsd-12-0-release-amd64
+      image: freebsd-11-2-release-amd64
+  install_script:
+    - sed -i.bak -e 's,pkg+http://pkg.FreeBSD.org/\${ABI}/quarterly,pkg+http://pkg.FreeBSD.org/\${ABI}/latest,' /etc/pkg/FreeBSD.conf
+    - pkg upgrade -y
+    - pkg install -y autoconf git
+  script:
+#    #- ./configure --prefix=/tmp "--${REMOTE}-remote"
+#    - ./configure --prefix=/tmp
+#    - make all
+#    - make testprogs
+#    - make install
+#    - ./testprogs/findalldevstest
+#    - make releasetar
+#    - if [ "$BUILD_LIBPCAP" = true ]; then (cd .. && echo '$ git clone [...] libpcap.git' && git clone --depth 3 --branch=master --quiet git://github.com/the-tcpdump-group/libpcap.git && cd libpcap && ./configure "--${REMOTE}-remote" --prefix=/tmp && make && make install); fi
+    - (cd .. && git clone --depth 1 --branch=master --quiet git://github.com/the-tcpdump-group/libpcap.git && cd libpcap && ./configure --prefix=/tmp && make && make install)
+    - touch .devel configure
+#    - ./configure --with-crypto=${CRYPTO} CPPFLAGS="-I/usr/local/Cellar/openssl/$OSX_SSL_DIR/include/" --prefix=/tmp
+    - ./configure --prefix=/tmp
+    - make
+    - PATH=$PATH make install
+    - make check
+    - ./tcpdump -D
+    - ./tcpdump -J
+    - ./tcpdump --version
+    - ./tcpdump -h
+    - make releasetar
